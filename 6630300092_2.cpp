@@ -2,112 +2,173 @@
 using namespace std;
 
 struct Node {
-    int src;
     int dest;
     Node* next;
 
-    Node(int srcVal, int destVal) : src(srcVal), dest(destVal), next(NULL) {}
+    Node(int destVal) : dest(destVal), next(NULL) {}
 };
 
-const int adjSize = 6;
-Node* adjList[adjSize];
+struct List {
+    Node* head;
+    Node* tail;
+
+    List() : head(NULL), tail(NULL) {}
+};
+
+const int BFS_START = 1;
+const int adjSize = 8;
+List* adjList[adjSize];
+int FORM[adjSize];
+int DISTANCE[adjSize];
+bool VISITED[adjSize];
+
+void init() {
+    for (int i = 0; i < adjSize; i++) {
+        adjList[i] = new List();
+        FORM[i] = -1;
+        DISTANCE[i] = -1;
+        VISITED[i] = false;
+    }
+}
+
 void showAdjList();
-void addEdge();
-void insertAdj(int src, int dest, Node*& head, Node*& tail);
-bool isSelfLoop(int src, int dest);
+void addEdge(int src, int dest);
+void enQue(int dest, List*& ls);
+void deQue(List*& ls);
+void BFS();
+int getFront(List* ls);
 
 int main() {
     int choose;
-
-    // Initialize adjList to NULL
-    for (int i = 0; i < adjSize; i++) {
-        adjList[i] = NULL;
-    }
+    init();
 
     do {
         cout << "========MENU======\n"
              << "1) Input adjacency list\n"
-             << "2) Show self loop from adjacency list\n"
-             << "3) Exit\n";
+             << "2) BFS\n"
+             << "3) Search path\n"
+             << "4) Exit\n";
         cout << "Please choose > ";
         cin >> choose;
 
         switch (choose) {
             case 1:
-                addEdge();
+                int dest;
+                for (int src = 0; src < adjSize; src++) {
+                    cout << "Enter # " << src << " : ";
+                    cin >> dest;
+                    while (dest != -1) {
+                        addEdge(src, dest);
+                        cin >> dest;
+                    }
+                }
                 showAdjList();
                 break;
 
             case 2:
-                for (int i = 0; i < adjSize; i++) {
-                    Node* p = adjList[i];
-                    while (p != NULL) {
-                        if (isSelfLoop(p->src, p->dest)) {
-                            cout << "Self loop: " << p->src << endl;
-                            break;
-                        }
-                        p = p->next;
-                    }
-                }
+                BFS();
                 break;
 
             case 3:
+
+                break;
+
+            case 4:
                 cout << "End!!";
                 break;
         }
         cout << endl;
 
-    } while (choose != 3);
+    } while (choose != 4);
 
     return 0;
 }
 
-void addEdge() {
-    int dest;
+void enQue(int dest, List*& ls) {
+    Node* newNode = new Node(dest);
 
-    for (int src = 0; src < adjSize; src++) {
-        Node* tail;
-        cout << "Enter # " << src << " : ";
-        cin >> dest;
-
-        Node* head = NULL;
-        tail = NULL;
-
-        while (dest != -1) {
-            insertAdj(src, dest, head, tail);
-            cin >> dest;
-        }
-
-        adjList[src] = head;
+    if (ls->head == NULL) {
+        ls->head = newNode;
+        ls->tail = newNode;
+    } else {
+        ls->tail->next = newNode;
+        ls->tail = newNode;
     }
 }
 
-void insertAdj(int src, int dest, Node*& head, Node*& tail) {
-    Node* newNode = new Node(src, dest);
+void deQue(List*& ls) {
+    if (ls == NULL || ls->head == NULL)
+        return;
 
-    if (head == NULL) {
-        head = newNode;
-        tail = newNode;
-    } else {
-        tail->next = newNode;
-        tail = newNode;
+    Node* temp = ls->head;
+    ls->head = ls->head->next;
+
+    if (ls->head == NULL) {
+        ls->tail = NULL;
     }
+
+    delete temp;
 }
 
 void showAdjList() {
     for (int i = 0; i < adjSize; i++) {
-        Node* p = adjList[i];
-        if (p != NULL) {
-            cout << "#" << p->src << ": ";
-            while (p != NULL) {
-                cout << p->dest << " ";
-                p = p->next;
-            }
-            cout << endl;
+        Node* p = adjList[i]->head;
+        cout << "#" << i << ": ";
+        while (p != NULL) {
+            cout << p->dest << " ";
+            p = p->next;
         }
+        cout << endl;
     }
 }
 
-bool isSelfLoop(int src, int dest) {
-    return src == dest;
+int getFront(List* ls) {
+    if (ls == NULL || ls->head == NULL) {
+        cout << "List is empty" << endl;
+        return -1;
+    }
+
+    return ls->head->dest;
+}
+
+void addEdge(int src, int dest) {
+    if (src != dest) {
+        enQue(dest, adjList[src]);
+    }
+}
+
+
+void BFS() {
+    List* ls = new List();
+    enQue(BFS_START, ls);
+
+    FORM[BFS_START] = 1;
+    DISTANCE[BFS_START] = 0;
+    VISITED[BFS_START] = true;
+
+    while (ls->head != NULL) {
+        int u = getFront(ls);
+        deQue(ls);
+
+        Node* p = adjList[u]->head;
+        while (p != NULL) {
+            int v = p->dest;
+            if (!VISITED[v]) {
+                enQue(v, ls);
+                FORM[v] = u;
+                DISTANCE[v] = DISTANCE[u] + 1;
+                VISITED[v] = true;
+            }
+            p = p->next;
+        }
+    }
+
+    delete ls;
+
+
+    cout << "    |   d  |   pred " << endl;
+    cout << "=====================" << endl;
+    for (int i = 0; i < adjSize; i++) {
+        cout << i << "   |" << DISTANCE[i] << "   |   " << FORM[i] << endl;
+    }
 }

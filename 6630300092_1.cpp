@@ -19,7 +19,6 @@ bool isSelfLoop(int src, int dest);
 int main() {
     int choose;
 
-    // Initialize adjList to NULL
     for (int i = 0; i < adjSize; i++) {
         adjList[i] = NULL;
     }
@@ -44,7 +43,7 @@ int main() {
                     while (p != NULL) {
                         if (isSelfLoop(p->src, p->dest)) {
                             cout << "Self loop: " << p->src << endl;
-                            break; // No need to continue checking the rest of the list for this node
+                            break;
                         }
                         p = p->next;
                     }
